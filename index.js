@@ -127,18 +127,18 @@ if (process.env.DEVMODE === 'cli') {
         console.log('connected');
         socket.on('chat message', function(msg){
             if(!msg || msg === '') return;
-            io.emit('chat message', `me: ${msg}`);
+            socket.emit('chat message', `me: ${msg}`);
 
             if(!socket.question){
                 const question = msg;
                 const a = answer(question);
                 if (a) {
                     delete socket.question;
-                    io.emit('chat message', `bot: ${a}`);
+                    socket.emit('chat message', `bot: ${a}`);
                 } else {
                     socket.question = question;
-                    io.emit('chat message', 'bot: Desculpa ainda não sei response isso...');
-                    io.emit('chat message', `bot: Como devo responder a '${question}'?`);
+                    socket.emit('chat message', 'bot: Desculpa ainda não sei response isso...');
+                    socket.emit('chat message', `bot: Como devo responder a '${question}'?`);
                 }
             }else {
                 const question = socket.question;
@@ -146,12 +146,12 @@ if (process.env.DEVMODE === 'cli') {
 
                 delete socket.question;
                 if (newAnswer === ':!') {
-                    io.emit('chat message', 'bot: Você desativou minha aprendizagem...');
+                    socket.emit('chat message', 'bot: Você desativou minha aprendizagem...');
                     return;
                 }
                 addAnswer(question, newAnswer);
                 
-                io.emit('chat message', 'bot: Obrigado por me ensinar!!!');
+                socket.emit('chat message', 'bot: Obrigado por me ensinar!!!');
         
                 (async () => fs.writeFileSync(FILE, JSON.stringify(graph.serialize())))();
             }
