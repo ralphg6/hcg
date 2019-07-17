@@ -127,7 +127,7 @@ if (process.env.DEVMODE === 'cli') {
         console.log('connected');
         socket.on('chat message', function(msg){
             if(!msg || msg === '') return;
-            socket.emit('chat message', `me: ${msg}`);
+            io.emit('chat message', `me: ${msg}`);
 
             if(!socket.question){
                 const question = msg;
@@ -153,7 +153,7 @@ if (process.env.DEVMODE === 'cli') {
                 
                 io.emit('chat message', 'bot: Obrigado por me ensinar!!!');
         
-                (async () => fs.writeFileSync(FILE, JSON.stringify(graph.serialize())))();
+               // (async () => fs.writeFileSync(FILE, JSON.stringify(graph.serialize())))();
             }
 
             
