@@ -149,11 +149,11 @@ if (process.env.DEVMODE === 'cli') {
                     io.emit('chat message', 'bot: Você desativou minha aprendizagem...');
                     return;
                 }
-                addAnswer(socket.question, newAnswer);
+                addAnswer(question, newAnswer);
                 
                 io.emit('chat message', 'bot: Obrigado por me ensinar!!!');
         
-               // (async () => fs.writeFileSync(FILE, JSON.stringify(graph.serialize())))();
+                (async () => fs.writeFileSync(FILE, JSON.stringify(graph.serialize())))();
             }
 
             
