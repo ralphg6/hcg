@@ -58,8 +58,10 @@ function loadData(offline = OFFLINE) {
   }
 }
 
+const getDataAsString = () => JSON.stringify(graph.serialize());
+
 const writeData = async (offline = OFFLINE) => {
-  const d = JSON.stringify(graph.serialize());
+  const d = getDataAsString();
 
   if (!offline) {
     // console.log('write d', d);
@@ -173,6 +175,11 @@ if (process.env.DEVMODE === 'cli') {
     }
   }
 } else {
+
+  app.get('/data', (req, res) => {
+    res.send(getDataAsString());
+  });
+
   app.use('/', express.static('public'));
 
   io.on('connection', (socket) => {
