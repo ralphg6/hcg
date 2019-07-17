@@ -58,7 +58,7 @@ function loadData(offline = OFFLINE) {
   }
 }
 
-const getDataAsString = () => JSON.stringify(graph.serialize());
+const getDataAsString = () => JSON.stringify(getData());
 
 const writeData = async (offline = OFFLINE) => {
   const d = getDataAsString();
@@ -98,6 +98,10 @@ graph.addAccEdge = (u, v, weight = 1) => {
     graph.setEdgeWeight(u, v, weight + graph.getEdgeWeight(u, v));
   }
 };
+
+function getData() {
+  return graph.serialize();
+}
 
 function toNodes(question) {
   const nQuestion = question.replace(/[,?.!]/, '').toLowerCase();
@@ -177,7 +181,7 @@ if (process.env.DEVMODE === 'cli') {
 } else {
 
   app.get('/data', (req, res) => {
-    res.send(getDataAsString());
+    res.send(getData());
   });
 
   app.use('/', express.static('public'));
