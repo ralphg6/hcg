@@ -22,7 +22,7 @@ let redisClient;
 function loadData(offline = OFFLINE) {
   console.log('loadData', offline);
   if (!offline) {
-    redisClient = redis.createClient(process.env.REDIS_URL);
+    redisClient = redis.createClient(process.env.REDISTOGO_URL);
     redisClient.on('connect', () => {
       console.log('Redis client connected');
       redisClient.get('data', (err, d) => {
