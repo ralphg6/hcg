@@ -147,7 +147,7 @@ const answer = (question) => {
   return as.length === 0 ? false : as[0].value;
 };
 
-addAnswer('Qual seu nome?', 'David');
+// addAnswer('Qual seu nome?', 'David');
 // answer('Quantos anos você tem?');
 // answer('Qual seu sobrenome?');
 // answer('Você tem filhos?');
