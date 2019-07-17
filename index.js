@@ -102,7 +102,7 @@ graph.addAccEdge = (u, v, weight = 1) => {
 };
 
 function toNodes(question) {
-  const nQuestion = question.replaceAll(/[,?.!]/, '').toLowerCase();
+  const nQuestion = question.replace(/[,?.!]/g, '').toLowerCase();
   const nodes = nQuestion.split(' ').map(n => encodeNode('t', n));
   return nodes;
 }
