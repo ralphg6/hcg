@@ -100,7 +100,7 @@ graph.addAccEdge = (u, v, weight = 1) => {
 
 
 function toNodes(question) {
-  const nQuestion = question.replace(/[,?.]/, '').toLowerCase();
+  const nQuestion = question.replace(/[,?.!]/, '').toLowerCase();
   const nodes = nQuestion.split(' ').map(n => encodeNode('t', n));
   return nodes;
 }
