@@ -18,6 +18,7 @@
   "dependencies": {
     "express": "^4.17.1",
     "graph-data-structure": "^1.8.0",
+    "logdna": "^3.2.1",
     "prompt-input": "^3.0.0",
     "readline-sync": "^1.4.9",
     "redis": "^2.8.0",

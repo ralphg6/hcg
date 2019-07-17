@@ -3,7 +3,7 @@
     "rules": {
         "indent" : ["error", 2],
         "max-len": ["error", 140],
-        "no-console": "error",
+        "no-console": "off",
         "arrow-parens": "off",
         "no-nested-ternary" : 0
     },

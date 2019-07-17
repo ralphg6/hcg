@@ -58,6 +58,8 @@ function loadData(offline = OFFLINE) {
   }
 }
 
+const getData = () => graph.serialize();
+
 const getDataAsString = () => JSON.stringify(getData());
 
 const writeData = async (offline = OFFLINE) => {
@@ -99,10 +101,6 @@ graph.addAccEdge = (u, v, weight = 1) => {
   }
 };
 
-function getData() {
-  return graph.serialize();
-}
-
 function toNodes(question) {
   const nQuestion = question.replaceAll(/[,?.!]/, '').toLowerCase();
   const nodes = nQuestion.split(' ').map(n => encodeNode('t', n));
@@ -129,7 +127,7 @@ const addAnswer = (q, a) => {
   nodes.forEach(element => {
     graph.addAccEdge(element, aNode);
   });
-}
+};
 
 const answer = (question) => {
   const qNodes = toNodes(question);
@@ -140,7 +138,7 @@ const answer = (question) => {
 
   const n = a.reduce(intersection, a[0]);
 
-  const as = n.map(decodeNode).filter(e => e.type == 'a');
+  const as = n.map(decodeNode).filter(e => e.type === 'a');
 
   // console.log('D', question, as.map( e => e.value));
 
@@ -156,6 +154,7 @@ const answer = (question) => {
 // console.log(answer('Você tem filhos?'));
 
 if (process.env.DEVMODE === 'cli') {
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     const question = readline.prompt();
 
@@ -170,6 +169,7 @@ if (process.env.DEVMODE === 'cli') {
       const newAnswer = readline.question(`Desculpa ainda não sei response isso...\nComo devo responder a '${question}'? `);
       if (newAnswer === ':!') {
         console.log('Você desativou minha aprendizagem...');
+        // eslint-disable-next-line no-continue
         continue;
       }
       addAnswer(question, newAnswer);
@@ -179,7 +179,6 @@ if (process.env.DEVMODE === 'cli') {
     }
   }
 } else {
-
   app.get('/data', (req, res) => {
     res.send(getData());
   });
@@ -196,19 +195,22 @@ if (process.env.DEVMODE === 'cli') {
         const question = msg;
         const a = answer(question);
         if (a) {
+          // eslint-disable-next-line no-param-reassign
           delete socket.question;
           socket.emit('chat message', `bot: ${a}`);
         } else {
+          // eslint-disable-next-line no-param-reassign
           socket.question = question;
           socket.emit('chat message', 'bot: Desculpa ainda não sei response isso...');
           socket.emit('chat message', `bot: Como devo responder a '${question}'?`);
         }
       } else {
         const {
-          question
+          question,
         } = socket;
         const newAnswer = msg;
 
+        // eslint-disable-next-line no-param-reassign
         delete socket.question;
         if (newAnswer === ':!') {
           socket.emit('chat message', 'bot: Você desativou minha aprendizagem...');
