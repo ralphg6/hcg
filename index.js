@@ -97,8 +97,6 @@ graph.addAccEdge = (u, v, weight = 1) => {
   }
 };
 
-
-
 function toNodes(question) {
   const nQuestion = question.replace(/[,?.!]/, '').toLowerCase();
   const nodes = nQuestion.split(' ').map(n => encodeNode('t', n));
@@ -108,7 +106,7 @@ function toNodes(question) {
 const addQuestion = question => {
   const nodes = toNodes(question);
   nodes.map(graph.addNode);
-  for (let i = 1; i < nodes.length; i++) {
+  for (let i = 1; i < nodes.length; i += 1) {
     graph.addAccEdge(nodes[i - 1], nodes[i]);
   }
   return nodes;
@@ -218,8 +216,6 @@ if (process.env.DEVMODE === 'cli') {
     console.log(`listening on *:${port}`);
   });
 }
-
-
 
 // fs.writeFileSync(FILE, JSON.stringify(graph.serialize()));
 
