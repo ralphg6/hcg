@@ -41,14 +41,15 @@ const decodeNode = (e) => {
 
 const adjust = () => {
   const nodes = graph.nodes();
+  console.log('nodes', nodes);
   const questions = {};
   _.uniq(nodes.filter(n => n.startsWith('q:'))).forEach(q => {
     const answers = questions[q.toLowerCase()] || [];
     questions[q] = _.union(answers, _.uniq(graph.adjacent(q)));
   });
+  console.log('questions', questions);
   // graph.deserialize({});
   Object.keys(questions).forEach(q => {
-    console.log('questions', questions);
     questions[q].forEach(a => {
       const weight = graph.getEdgeWeight(q, a);
       console.log(`${q} > ${a} w: ${weight}`);
@@ -108,12 +109,12 @@ const addAnswer = (q, a) => {
 };
 
 const postLoad = () => {
-  addAnswer('Qual seu nome?', 'David');
-  addAnswer('Qual seu nome?', 'David');
-  addAnswer('Qual seu nome?', 'David');
-  addAnswer('Qual seu nome?', 'David');
-  addAnswer('Qual seu nome?', 'David');
-  addAnswer('Qual seu nome?', 'David');
+  // addAnswer('Qual seu nome?', 'David');
+  // addAnswer('Qual seu nome?', 'David');
+  // addAnswer('Qual seu nome?', 'David');
+  // addAnswer('Qual seu nome?', 'David');
+  // addAnswer('Qual seu nome?', 'David');
+  // addAnswer('Qual seu nome?', 'David');
 };
 
 function loadData(offline = OFFLINE) {
