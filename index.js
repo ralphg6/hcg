@@ -29,7 +29,7 @@ graph.addAccEdge = (u, v, weight) => {
 };
 
 graph.clearAll = () => {
-
+  graph.nodes().forEach(graph.removeNode);
 };
 
 const encodeNode = (t, k) => `${t}:${k}`;
@@ -97,15 +97,14 @@ const backup = () => {
 
 const adjust = () => {
   const nodes = graph.nodes();
-  console.log('nodes', nodes);
+  // console.log('nodes', nodes);
   const questions = {};
   _.uniq(nodes.filter(n => n.startsWith('q:'))).forEach(q => {
     const qlc = q.toLowerCase();
     const answers = questions[qlc] || [];
     questions[qlc] = _.union(answers, _.uniq(graph.adjacent(q)));
   });
-  console.log('questions', questions);
-  // backup();
+  // console.log('questions', questions);
   const newData = {};
   // graph.deserialize({});
   Object.keys(questions).forEach(q => {
@@ -122,13 +121,19 @@ const adjust = () => {
     });
   });
 
-  console.log('newData', newData);
+  // console.log('newData', newData);
+  backup();
 
-  // graph.clearAll();
+  graph.clearAll();
 
-  // addAnswer(decodeNode(q).value, decodeNode(a).value);
-  // graph.setEdgeWeight(q, a)
-  return newData;
+  Object.keys(newData).forEach(q => {
+    newData[q].forEach(e => {
+      addAnswer(decodeNode(q).value, decodeNode(e.a).value);
+      graph.setEdgeWeight(q, e.a, e.weight);
+    });
+  });
+
+  return getData();
 };
 
 const postLoad = () => {
