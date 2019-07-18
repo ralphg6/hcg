@@ -100,8 +100,9 @@ const adjust = () => {
   console.log('nodes', nodes);
   const questions = {};
   _.uniq(nodes.filter(n => n.startsWith('q:'))).forEach(q => {
-    const answers = questions[q.toLowerCase()] || [];
-    questions[q] = _.union(answers, _.uniq(graph.adjacent(q)));
+    const qlc = q.toLowerCase();
+    const answers = questions[qlc] || [];
+    questions[qlc] = _.union(answers, _.uniq(graph.adjacent(q)));
   });
   console.log('questions', questions);
   // backup();
