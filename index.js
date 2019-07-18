@@ -3,13 +3,16 @@ const readline = require('readline-sync');
 const fs = require('fs');
 const express = require('express');
 const redis = require('redis');
+const _ = require('underscore');
 
 const app = express();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 
 const port = process.env.PORT || 3000;
-const { OFFLINE } = process.env;
+let {
+  OFFLINE,
+} = process.env;
 
 const FILE = 'data.json';
 
@@ -19,44 +22,55 @@ const graph = Graph();
 
 let redisClient;
 
-function loadData(offline = OFFLINE) {
-  console.log('loadData', offline);
-  if (!offline) {
-    redisClient = redis.createClient(process.env.REDISTOGO_URL);
-    redisClient.on('connect', () => {
-      console.log('Redis client connected');
-      redisClient.get('data', (err, d) => {
-        if (err) {
-          console.error('Erro ao ler dados do redis');
-          process.exit(-1);
-        }
-        // console.log('load d', d);
-        if (d) {
-          graph.deserialize(JSON.parse(d));
-        }
-      });
-    });
-    redisClient.on('error', (err) => {
-      console.error(`Something went wrong on redis connection ${err}`);
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('Entrando no modo OFFLINE...');
-        loadData(true);
-        redisClient.end(false);
-      }
-    });
+graph.addAccEdge = (u, v, weight) => {
+  if (!graph.adjacent(u).includes(v)) {
+    graph.addEdge(u, v, weight);
+  } else {
+    graph.setEdgeWeight(u, v, (weight || 1) + graph.getEdgeWeight(u, v));
   }
-  if (offline) {
-    try {
-      data = fs.readFileSync(FILE, 'utf8');
-    } catch (e) {
-      console.error('Erro ao ler dados do arquivo');
-      process.exit(-1);
-    }
-    if (data) {
-      graph.deserialize(JSON.parse(data));
-    }
-  }
+};
+
+const encodeNode = (t, k) => `${t}:${k}`;
+const decodeNode = (e) => {
+  const p = e.split(':');
+  return {
+    type: p[0],
+    value: p[1],
+  };
+};
+
+const adjust = () => {
+  const nodes = graph.nodes();
+  const questions = {};
+  _.uniq(nodes.filter(n => n.startsWith('q:'))).forEach(q => {
+    const answers = questions[q.toLowerCase()] || [];
+    questions[q] = _.union(answers, _.uniq(graph.adjacent(q)));
+  });
+  // graph.deserialize({});
+  Object.keys(questions).forEach(q => {
+    console.log('questions', questions);
+    questions[q].forEach(a => {
+      const weight = graph.getEdgeWeight(q, a);
+      console.log(`${q} > ${a} w: ${weight}`);
+    });
+  });
+};
+
+
+function toNodes(question) {
+  const nQuestion = question.replace(/[,?.!]/g, '').toLowerCase();
+  const nodes = nQuestion.split(' ').map(n => encodeNode('t', n));
+  return nodes;
 }
+
+const addQuestion = question => {
+  const nodes = toNodes(question);
+  nodes.map(graph.addNode);
+  for (let i = 1; i < nodes.length; i += 1) {
+    graph.addAccEdge(nodes[i - 1], nodes[i]);
+  }
+  return nodes;
+};
 
 const getData = () => graph.serialize();
 
@@ -80,43 +94,6 @@ const writeData = async (offline = OFFLINE) => {
   }
 };
 
-loadData();
-
-const encodeNode = (t, k) => `${t}:${k}`;
-const decodeNode = (e) => {
-  const p = e.split(':');
-  return {
-    type: p[0],
-    value: p[1],
-  };
-};
-
-graph.removeNode(encodeNode('a', ':!'));
-
-graph.addAccEdge = (u, v, weight = 1) => {
-  if (!graph.adjacent(u).includes(v)) {
-    graph.addEdge(u, v, weight);
-  } else {
-    graph.setEdgeWeight(u, v, weight + graph.getEdgeWeight(u, v));
-  }
-};
-
-function toNodes(question) {
-  const nQuestion = question.replaceAll(/[,?.!]/, '').toLowerCase();
-  const nodes = nQuestion.split(' ').map(n => encodeNode('t', n));
-  return nodes;
-}
-
-const addQuestion = question => {
-  const nodes = toNodes(question);
-  nodes.map(graph.addNode);
-  for (let i = 1; i < nodes.length; i += 1) {
-    graph.addAccEdge(nodes[i - 1], nodes[i]);
-  }
-  return nodes;
-};
-
-
 const addAnswer = (q, a) => {
   const nodes = addQuestion(q);
   const qNode = encodeNode('q', q);
@@ -127,7 +104,66 @@ const addAnswer = (q, a) => {
   nodes.forEach(element => {
     graph.addAccEdge(element, aNode);
   });
+  writeData();
 };
+
+const postLoad = () => {
+  addAnswer('Qual seu nome?', 'David');
+  addAnswer('Qual seu nome?', 'David');
+  addAnswer('Qual seu nome?', 'David');
+  addAnswer('Qual seu nome?', 'David');
+  addAnswer('Qual seu nome?', 'David');
+  addAnswer('Qual seu nome?', 'David');
+};
+
+function loadData(offline = OFFLINE) {
+  OFFLINE = offline;
+  console.log('loadData', offline);
+  if (!offline) {
+    redisClient = redis.createClient(process.env.REDISTOGO_URL);
+    redisClient.on('connect', () => {
+      console.log('Redis client connected');
+      redisClient.get('data', (err, d) => {
+        console.log('redis get', err, d);
+        if (err) {
+          console.error('Erro ao ler dados do redis');
+          process.exit(-1);
+        }
+        console.log('load d', d);
+        if (d) {
+          graph.deserialize(JSON.parse(d));
+          postLoad();
+        }
+      });
+    });
+    redisClient.on('error', (err) => {
+      console.error(`Something went wrong on redis connection ${err}`);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Entrando no modo OFFLINE...');
+        redisClient.end(false);
+        loadData(true);
+      }
+    });
+  }
+  if (offline) {
+    if (fs.existsSync(FILE)) {
+      try {
+        data = fs.readFileSync(FILE, 'utf8');
+      } catch (e) {
+        console.error('Erro ao ler dados do arquivo');
+        process.exit(-1);
+      }
+      if (data) {
+        graph.deserialize(JSON.parse(data));
+      }
+    }
+    postLoad();
+  }
+}
+
+loadData();
+
+graph.removeNode(encodeNode('a', ':!'));
 
 const answer = (question) => {
   const qNodes = toNodes(question);
@@ -145,7 +181,6 @@ const answer = (question) => {
   return as.length === 0 ? false : as[0].value;
 };
 
-// addAnswer('Qual seu nome?', 'David');
 // answer('Quantos anos você tem?');
 // answer('Qual seu sobrenome?');
 // answer('Você tem filhos?');
@@ -180,6 +215,12 @@ if (process.env.DEVMODE === 'cli') {
   }
 } else {
   app.get('/data', (req, res) => {
+    res.send(getData());
+  });
+
+  app.get('/adjust', (req, res) => {
+    adjust();
+
     res.send(getData());
   });
 
@@ -219,8 +260,6 @@ if (process.env.DEVMODE === 'cli') {
         addAnswer(question, newAnswer);
 
         socket.emit('chat message', 'bot: Obrigado por me ensinar!!!');
-
-        writeData();
       }
     });
   });
@@ -229,9 +268,3 @@ if (process.env.DEVMODE === 'cli') {
     console.log(`listening on *:${port}`);
   });
 }
-
-// fs.writeFileSync(FILE, JSON.stringify(graph.serialize()));
-
-// console.log('Thank YOU!');
-
-// console.log(graph.serialize());

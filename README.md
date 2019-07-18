@@ -9,3 +9,4 @@ Esse projeto é uma tentativa de criar um motor pra conversas para Chatbot, de f
 - [ ] Análise de similaridade
 - [ ] Migrar pra tecnologia de persistência "Graph Native"
 - [ ] Construir api pra integração WEBHOOK
+- [ ] Detecção de incompletude

@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "dev": ". ./.env && node index.js",
-    "dev-watch": "nodemon index.js",
+    "dev-watch": "nodemon -w . -e js,html index.js",
     "start": "node index.js"
   },
   "devDependencies": {
