@@ -207,7 +207,7 @@ const answer = (question) => {
 
   // console.log('D', question, as.map( e => e.value));
 
-  return as.length === 0 ? false : as[Math.ceil(Math.random() * as.length)].value;
+  return as.length === 0 ? false : as[Math.floor(Math.random() * as.length)].value;
 };
 
 // answer('Quantos anos você tem?');
