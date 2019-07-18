@@ -14,8 +14,6 @@ let {
   OFFLINE,
 } = process.env;
 
-const FILE = 'data.json';
-
 let data = false;
 
 const graph = Graph();
@@ -30,6 +28,10 @@ graph.addAccEdge = (u, v, weight) => {
   }
 };
 
+graph.clearAll = () => {
+
+};
+
 const encodeNode = (t, k) => `${t}:${k}`;
 const decodeNode = (e) => {
   const p = e.split(':');
@@ -38,25 +40,6 @@ const decodeNode = (e) => {
     value: p[1],
   };
 };
-
-const adjust = () => {
-  const nodes = graph.nodes();
-  console.log('nodes', nodes);
-  const questions = {};
-  _.uniq(nodes.filter(n => n.startsWith('q:'))).forEach(q => {
-    const answers = questions[q.toLowerCase()] || [];
-    questions[q] = _.union(answers, _.uniq(graph.adjacent(q)));
-  });
-  console.log('questions', questions);
-  // graph.deserialize({});
-  Object.keys(questions).forEach(q => {
-    questions[q].forEach(a => {
-      const weight = graph.getEdgeWeight(q, a);
-      console.log(`${q} > ${a} w: ${weight}`);
-    });
-  });
-};
-
 
 function toNodes(question) {
   const nQuestion = question.replace(/[,?.!]/g, '').toLowerCase();
@@ -77,13 +60,12 @@ const getData = () => graph.serialize();
 
 const getDataAsString = () => JSON.stringify(getData());
 
-const writeData = async (offline = OFFLINE) => {
+const writeData = async (offline = OFFLINE, tag = 'data') => {
   const d = getDataAsString();
 
   if (!offline) {
     // console.log('write d', d);
-
-    redisClient.set('data', d, (err) => {
+    redisClient.set(tag, d, (err) => {
       if (err) {
         console.error('Erro ao gravar dados no redis');
         process.exit(-1);
@@ -91,7 +73,7 @@ const writeData = async (offline = OFFLINE) => {
     });
   }
   if (offline) {
-    fs.writeFileSync(FILE, d);
+    fs.writeFileSync(`${tag}.json`, d);
   }
 };
 
@@ -108,6 +90,46 @@ const addAnswer = (q, a) => {
   writeData();
 };
 
+const backup = () => {
+  const tag = `backup_${new Date().getTime()}`;
+  writeData(OFFLINE, tag);
+};
+
+const adjust = () => {
+  const nodes = graph.nodes();
+  console.log('nodes', nodes);
+  const questions = {};
+  _.uniq(nodes.filter(n => n.startsWith('q:'))).forEach(q => {
+    const answers = questions[q.toLowerCase()] || [];
+    questions[q] = _.union(answers, _.uniq(graph.adjacent(q)));
+  });
+  console.log('questions', questions);
+  // backup();
+  const newData = {};
+  // graph.deserialize({});
+  Object.keys(questions).forEach(q => {
+    newData[q] = [];
+    questions[q].forEach(a => {
+      const weight = graph.getEdgeWeight(q, a);
+
+      newData[q].push({
+        a,
+        weight,
+      });
+
+      // console.log(`${q} > ${a} w: ${weight}`);
+    });
+  });
+
+  console.log('newData', newData);
+
+  // graph.clearAll();
+
+  // addAnswer(decodeNode(q).value, decodeNode(a).value);
+  // graph.setEdgeWeight(q, a)
+  return newData;
+};
+
 const postLoad = () => {
   // addAnswer('Qual seu nome?', 'David');
   // addAnswer('Qual seu nome?', 'David');
@@ -117,20 +139,19 @@ const postLoad = () => {
   // addAnswer('Qual seu nome?', 'David');
 };
 
-function loadData(offline = OFFLINE) {
+function loadData(offline = OFFLINE, tag = 'data') {
   OFFLINE = offline;
   console.log('loadData', offline);
   if (!offline) {
     redisClient = redis.createClient(process.env.REDISTOGO_URL);
     redisClient.on('connect', () => {
       console.log('Redis client connected');
-      redisClient.get('data', (err, d) => {
+      redisClient.get(tag, (err, d) => {
         console.log('redis get', err, d);
         if (err) {
           console.error('Erro ao ler dados do redis');
           process.exit(-1);
         }
-        console.log('load d', d);
         if (d) {
           graph.deserialize(JSON.parse(d));
           postLoad();
@@ -147,9 +168,10 @@ function loadData(offline = OFFLINE) {
     });
   }
   if (offline) {
-    if (fs.existsSync(FILE)) {
+    const fileName = `${tag}.json`;
+    if (fs.existsSync(fileName)) {
       try {
-        data = fs.readFileSync(FILE, 'utf8');
+        data = fs.readFileSync(fileName, 'utf8');
       } catch (e) {
         console.error('Erro ao ler dados do arquivo');
         process.exit(-1);
@@ -220,9 +242,7 @@ if (process.env.DEVMODE === 'cli') {
   });
 
   app.get('/adjust', (req, res) => {
-    adjust();
-
-    res.send(getData());
+    res.send(adjust());
   });
 
   app.use('/', express.static('public'));
